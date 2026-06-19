@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v10.3 — Стабильный Демо (Без Не спать)</title>
+    <title>Bastion Eye v10.4 — Демо Баланс (Стабильный TradingView)</title>
     <style>
         body {
             background: #0a0a0a; margin: 0; padding: 0;
@@ -81,7 +81,9 @@
     </div>
 
     <div class="chart-container">
-        <div id="tv_chart_container" style="height:100%; width:100%"></div>
+        <div class="tradingview-widget-container" style="height:100%; width:100%">
+            <div id="tv_chart_container" style="height:100%; width:100%"></div>
+        </div>
     </div>
 
     <div class="balance-panel">
@@ -107,7 +109,7 @@
         <div id="statusText">Инициализация...</div>
     </div>
 
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         // ===== ЭЛЕМЕНТЫ =====
         const priceDisplay = document.getElementById('priceDisplay');
@@ -152,69 +154,68 @@
             demoBalanceSpan.textContent = demoBalance.toFixed(2);
         }
 
-        // ===== LIGHTWEIGHT CHARTS (Bybit) =====
-        const chart = LightweightCharts.createChart(document.getElementById('tv_chart_container'), {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            layout: { backgroundColor: '#0a0a0a', textColor: '#d1d4dc' },
-            grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
-            rightPriceScale: { borderColor: '#333' },
-            timeScale: { borderColor: '#333' },
-        });
-        const candleSeries = chart.addCandlestickSeries({
-            upColor: '#00ff00', downColor: '#ff0000', borderDownColor: '#ff0000',
-            borderUpColor: '#00ff00', wickDownColor: '#ff0000', wickUpColor: '#00ff00',
+        // ===== ГРАФИК TRADINGVIEW =====
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": "BINANCE:BTCUSDT",
+            "interval": "60",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "ru",
+            "toolbar_bg": "#1a1a1a",
+            "enable_publishing": false,
+            "hide_side_toolbar": false,
+            "allow_symbol_change": true,
+            "studies": ["MASimple@tv-basicstudies"],
+            "container_id": "tv_chart_container"
         });
 
-        // Загрузка свечей Bybit и расчёт среднего объёма
-        async function loadCandleData() {
+        // ===== ЗАГРУЗКА ОБЪЁМОВ (раз в минуту) =====
+        async function loadVolumeData() {
             try {
                 const response = await fetch(KLINE_API);
-                if (!response.ok) throw new Error('Ошибка сети');
+                if (!response.ok) throw new Error('Ошибка');
                 const json = await response.json();
                 const data = json.result.list.reverse();
-                const candleData = data.map(d => ({
-                    time: parseInt(d[0]) / 1000,
-                    open: parseFloat(d[1]), high: parseFloat(d[2]),
-                    low: parseFloat(d[3]), close: parseFloat(d[4]),
-                    volume: parseFloat(d[5])
-                }));
-                if (candleData.length > 1) {
-                    const volumes = candleData.slice(0, -1).map(d => d.volume);
-                    avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+                const volumes = data.map(d => parseFloat(d[5]));
+                if (volumes.length > 1) {
+                    avgVolume = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1);
                 }
-                const last = candleData[candleData.length - 1];
-                lastCandleVolume = last.volume;
-                candleSeries.setData(candleData);
-                statusText.textContent = 'График Bybit загружен';
+                lastCandleVolume = volumes[volumes.length - 1] || 0;
             } catch (e) {
-                statusText.textContent = 'Ошибка загрузки свечей, пробую снова...';
-                setTimeout(loadCandleData, 5000);
+                console.error('Ошибка загрузки объёмов', e);
             }
         }
-        loadCandleData();
+        loadVolumeData();
+        setInterval(loadVolumeData, 60000);
 
         // ===== ЗВУК =====
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+
         function playAlarmSound() {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
             osc.frequency.setValueAtTime(900, now);
             osc.frequency.linearRampToValueAtTime(1100, now + 0.5);
             osc.type = 'sawtooth';
             gain.gain.setValueAtTime(0.8, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
-            osc.start(now); osc.stop(now + 1);
+            osc.start(now);
+            osc.stop(now + 1);
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
-            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
             osc2.frequency.setValueAtTime(400, now);
             osc2.type = 'square';
             gain2.gain.setValueAtTime(0.4, now);
             gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc2.start(now); osc2.stop(now + 0.3);
+            osc2.start(now);
+            osc2.stop(now + 0.3);
         }
 
         // ===== ДЕМО-ПОЗИЦИЯ =====
@@ -296,11 +297,13 @@
 
         function stopAlarm() {
             alarmIndicator.style.display = 'none';
-            if (window.alarmInterval) { clearInterval(window.alarmInterval); window.alarmInterval = null; }
+            if (window.alarmInterval) { clearInterval(window.alarmInterval);
+                window.alarmInterval = null; }
             statusText.textContent = 'Мониторинг остановлен.';
             statusText.style.color = '#888';
             isMonitoring = false;
-            startBtn.disabled = false; stopBtn.disabled = true;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
             if (virtualPos) closeVirtualPosition(parseFloat(priceDisplay.textContent.replace('$ ', '')));
         }
 
@@ -331,26 +334,36 @@
                     if (useHighVol) {
                         if (price < longLevel && volHigh) {
                             alarm(price, 'SHORT', true);
-                            isMonitoring = false; startBtn.disabled = false; return;
+                            isMonitoring = false;
+                            startBtn.disabled = false;
+                            return;
                         }
                         if (price > shortLevel && volHigh) {
                             alarm(price, 'LONG', true);
-                            isMonitoring = false; startBtn.disabled = false; return;
+                            isMonitoring = false;
+                            startBtn.disabled = false;
+                            return;
                         }
                     } else {
                         if (longTouchedBelow && price > longLevel) {
                             alarm(price, 'LONG', false);
-                            isMonitoring = false; startBtn.disabled = false; return;
+                            isMonitoring = false;
+                            startBtn.disabled = false;
+                            return;
                         }
                         if (shortTouchedAbove && price < shortLevel) {
                             alarm(price, 'SHORT', false);
-                            isMonitoring = false; startBtn.disabled = false; return;
+                            isMonitoring = false;
+                            startBtn.disabled = false;
+                            return;
                         }
                     }
                 }
             } catch (e) {
                 priceDisplay.textContent = 'ОШИБКА';
-                startBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
+                startBtn.disabled = true;
+                testAlarmBtn.disabled = true;
+                testBreakoutBtn.disabled = true;
             }
         }
         setInterval(fetchPrice, 3000);
@@ -360,10 +373,15 @@
         startBtn.addEventListener('click', () => {
             const longLevel = parseFloat(longLevelInput.value);
             const shortLevel = parseFloat(shortLevelInput.value);
-            if (!longLevel || !shortLevel) { alert('Введи оба уровня!'); return; }
-            longTouchedBelow = false; shortTouchedAbove = false;
+            if (!longLevel || !shortLevel) {
+                alert('Введи оба уровня!');
+                return;
+            }
+            longTouchedBelow = false;
+            shortTouchedAbove = false;
             isMonitoring = true;
-            startBtn.disabled = true; stopBtn.disabled = false;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
             const mode = highVolCheck.checked ? 'КОНТРТРЕНД (High Vol)' : 'ЛОЖНЫЕ ПРОБОИ';
             statusText.textContent = `Охрана LONG ${longLevel} / SHORT ${shortLevel}. Режим: ${mode}`;
             statusText.style.color = '#ffff00';
@@ -376,11 +394,15 @@
         testBreakoutBtn.addEventListener('click', () => {
             alarmIndicator.style.display = 'block';
             alarmIndicator.textContent = 'ТЕСТ ПРОБОЯ!';
-            statusText.textContent = 'ТЕСТ ПРОБОЯ!'; statusText.style.color = '#ff5500'; playAlarmSound();
+            statusText.textContent = 'ТЕСТ ПРОБОЯ!';
+            statusText.style.color = '#ff5500';
+            playAlarmSound();
             setTimeout(() => {
                 alarmIndicator.style.display = 'none';
                 if (window.alarmInterval) { clearInterval(window.alarmInterval); }
-                statusText.textContent = 'Готов.'; statusText.style.color = '#888'; stopBtn.disabled = true;
+                statusText.textContent = 'Готов.';
+                statusText.style.color = '#888';
+                stopBtn.disabled = true;
             }, 3000);
         });
         closePosBtn.addEventListener('click', () => {
