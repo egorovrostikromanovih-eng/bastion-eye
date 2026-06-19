@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bastion Eye v2.2 - Тест Пробоя</title>
+    <title>Bastion Eye v2.3 — Связка Стоп</title>
     <style>
         body {
             background: #0a0a0a;
@@ -69,7 +69,7 @@
             border-color: #00ff00;
             color: #00ff00;
         }
-        #startBtn:hover {
+        #startBtn:hover:not(:disabled) {
             border-color: #00ff00;
             color: #00ff00;
             background: #333;
@@ -78,7 +78,7 @@
             border-color: #ffff00;
             color: #ffff00;
         }
-        #stopBtn:hover {
+        #stopBtn:hover:not(:disabled) {
             border-color: #ffff00;
             color: #ffff00;
             background: #333;
@@ -88,7 +88,7 @@
             color: #ff0000;
             font-weight: bold;
         }
-        #testAlarmBtn:hover {
+        #testAlarmBtn:hover:not(:disabled) {
             border-color: #ff0000;
             color: #ff0000;
             background: #333;
@@ -98,7 +98,7 @@
             color: #ff5500;
             font-weight: bold;
         }
-        #testBreakoutBtn:hover {
+        #testBreakoutBtn:hover:not(:disabled) {
             border-color: #ff5500;
             color: #ff5500;
             background: #333;
@@ -118,7 +118,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>BASTION EYE v2.2</h1>
+        <h1>BASTION EYE v2.3</h1>
         <div id="price">ЗАГРУЗКА...</div>
         <div class="status" id="status">Жду команды...</div>
         
@@ -148,12 +148,10 @@
         let isMonitoring = false;
         let priceWasAboveLevel = false;
 
-        // Улучшенный, более громкий и резкий звук сирены
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playAlarmSound() {
             const now = audioCtx.currentTime;
             
-            // Основной тон
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -166,7 +164,6 @@
             osc.start(now);
             osc.stop(now + 1);
             
-            // Второй слой для громкости
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
             osc2.connect(gain2);
@@ -186,6 +183,8 @@
             playAlarmSound();
             if (window.alarmInterval) clearInterval(window.alarmInterval);
             window.alarmInterval = setInterval(playAlarmSound, 2000);
+            // Включаем кнопку СТОП
+            stopBtn.disabled = false;
         }
 
         function stopAlarm() {
@@ -199,7 +198,7 @@
             isMonitoring = false;
             priceWasAboveLevel = false;
             startBtn.disabled = false;
-            stopBtn.disabled = true;
+            stopBtn.disabled = true; // Стоп снова неактивна
         }
 
         async function fetchPrice() {
@@ -226,7 +225,6 @@
                         alarm();
                         isMonitoring = false;
                         startBtn.disabled = false;
-                        stopBtn.disabled = true;
                     }
                 }
             } catch (error) {
@@ -255,24 +253,26 @@
             stopBtn.disabled = false;
             statusElement.textContent = `Охраняю уровень ${targetLevel}. Жду, когда цена будет выше и упадёт...`;
             statusElement.style.color = '#ffff00';
-            stopAlarm();
+            stopAlarm(); // на случай, если была тестовая сирена
         });
 
-        stopBtn.addEventListener('click', stopAlarm);
+        stopBtn.addEventListener('click', () => {
+            stopAlarm();
+        });
         
         testAlarmBtn.addEventListener('click', () => {
             alarm();
-            statusElement.textContent = 'Ручной тест сирены!';
+            statusElement.textContent = 'Ручной тест сирены! Нажми СТОП чтобы выключить.';
+            // Кнопка СТОП уже активна из alarm()
         });
 
         testBreakoutBtn.addEventListener('click', () => {
-            // Имитация ложного пробоя на 3 секунды
             alarmIndicator.style.display = 'block';
             statusElement.textContent = 'ТЕСТ ПРОБОЯ! Симулирую касание и возврат...';
             statusElement.style.color = '#ff5500';
             playAlarmSound();
+            // Кнопка СТОП активна из alarm()
             
-            // Автоматически отключаем через 3 секунды
             setTimeout(() => {
                 alarmIndicator.style.display = 'none';
                 if (window.alarmInterval) {
@@ -281,6 +281,7 @@
                 }
                 statusElement.textContent = 'Тест завершен. Система готова.';
                 statusElement.style.color = '#888';
+                stopBtn.disabled = true; // Через 3 сек кнопка Стоп снова неактивна
             }, 3000);
         });
     </script>
