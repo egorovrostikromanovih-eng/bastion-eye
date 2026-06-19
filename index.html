@@ -3,63 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v10.4 — Демо Баланс (Стабильный TradingView)</title>
+    <title>Bastion Eye v10.5 — Стабильный Текстовый Монитор</title>
     <style>
         body {
-            background: #0a0a0a; margin: 0; padding: 0;
+            background: #0a0a0a;
+            margin: 0;
+            padding: 0;
             font-family: 'Courier New', Courier, monospace;
-            display: flex; flex-direction: column; height: 100vh; color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: #e0e0e0;
         }
         .cockpit {
-            background: #111; border-bottom: 2px solid #333; padding: 0.8rem 1rem;
-            display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-            gap: 0.8rem; z-index: 10;
+            background: #111;
+            border-bottom: 2px solid #333;
+            padding: 0.8rem 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            z-index: 10;
         }
-        .cockpit label { color: #888; font-size: 0.8rem; margin-right: -0.5rem; }
+        .cockpit label {
+            color: #888;
+            font-size: 0.8rem;
+            margin-right: -0.5rem;
+        }
         .cockpit input[type="number"] {
-            background: #1a1a1a; color: #00ff00; border: 1px solid #555;
-            padding: 0.4rem; font-size: 0.9rem; text-align: center; border-radius: 0.4rem; width: 100px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 0.4rem;
+            font-size: 0.9rem;
+            text-align: center;
+            border-radius: 0.4rem;
+            width: 100px;
         }
         .cockpit button {
-            background: #1a1a1a; color: #ccc; border: 1px solid #555;
-            padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer;
-            border-radius: 0.4rem; transition: 0.2s; white-space: nowrap; font-weight: bold;
+            background: #1a1a1a;
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 0.4rem;
+            transition: 0.2s;
+            white-space: nowrap;
+            font-weight: bold;
         }
-        .cockpit button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cockpit button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
         #startBtn { border-color: #00ff00; color: #00ff00; }
         #stopBtn { border-color: #ffff00; color: #ffff00; }
         #testAlarmBtn { border-color: #ff0000; color: #ff0000; }
         #testBreakoutBtn { border-color: #ff5500; color: #ff5500; }
-        .filter-group { display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: #aaa; }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            color: #aaa;
+        }
         .filter-group input[type="checkbox"] { width: auto; margin: 0; }
 
-        .chart-container { flex: 1; position: relative; overflow: hidden; border-bottom: 2px solid #333; }
-        .status-bar {
-            background: #111; padding: 0.8rem 1rem; display: flex; justify-content: space-between;
-            align-items: center; font-size: 0.8rem; border-top: 2px solid #333; flex-wrap: wrap;
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
-        #priceDisplay { font-size: 1.5rem; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px #00ff00; }
-        #alarmIndicator { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; display: none; }
+        .price-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .level-info {
+            display: flex;
+            gap: 2rem;
+            font-size: 1rem;
+            color: #aaa;
+        }
+        .level-info span {
+            color: #fff;
+        }
+
+        .status-bar {
+            background: #111;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            border-top: 2px solid #333;
+            flex-wrap: wrap;
+        }
+        #alarmIndicator {
+            color: #ff0000;
+            font-weight: bold;
+            animation: blink 0.5s infinite;
+            display: none;
+        }
         @keyframes blink { 50% { opacity: 0; } }
         #statusText { color: #888; }
 
         .position-panel {
-            background: #1a1a1a; border: 2px solid #333; padding: 0.6rem 1rem;
-            display: none; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            padding: 0.6rem 1rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
         .position-panel.active { display: flex; }
         .position-badge {
-            font-weight: bold; font-size: 0.9rem; padding: 0.2rem 0.6rem; border-radius: 0.3rem;
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.3rem;
         }
         .position-badge.long { background: #1a2a1a; color: #00ff00; border: 1px solid #00ff00; }
         .position-badge.short { background: #2a1a1a; color: #ff0000; border: 1px solid #ff0000; }
         #closePosBtn {
-            background: #aa0000; color: #fff; border: 1px solid #ff0000;
-            padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer; border-radius: 0.4rem; font-weight: bold;
+            background: #aa0000;
+            color: #fff;
+            border: 1px solid #ff0000;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 0.4rem;
+            font-weight: bold;
         }
         .balance-panel {
-            background: #111; padding: 0.4rem 1rem;
-            display: flex; justify-content: space-between; font-size: 0.8rem;
+            background: #111;
+            padding: 0.4rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -80,9 +168,15 @@
         </div>
     </div>
 
-    <div class="chart-container">
-        <div class="tradingview-widget-container" style="height:100%; width:100%">
-            <div id="tv_chart_container" style="height:100%; width:100%"></div>
+    <div class="main-panel">
+        <div class="price-display" id="bigPrice">ЗАГРУЗКА...</div>
+        <div class="level-info">
+            <div>LONG: <span id="longLevelDisplay">—</span></div>
+            <div>SHORT: <span id="shortLevelDisplay">—</span></div>
+        </div>
+        <div class="level-info">
+            <div>Объём: <span id="volStatus">—</span></div>
+            <div>Режим: <span id="modeDisplay">—</span></div>
         </div>
     </div>
 
@@ -101,18 +195,13 @@
     </div>
 
     <div class="status-bar">
-        <div>
-            <span style="color:#888;">BTC/USDT:</span>
-            <span id="priceDisplay">ЗАГРУЗКА...</span>
-        </div>
         <div id="alarmIndicator">ЛОЖНЫЙ ПРОБОЙ!</div>
         <div id="statusText">Инициализация...</div>
     </div>
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         // ===== ЭЛЕМЕНТЫ =====
-        const priceDisplay = document.getElementById('priceDisplay');
+        const bigPrice = document.getElementById('bigPrice');
         const statusText = document.getElementById('statusText');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -130,6 +219,10 @@
         const posStop = document.getElementById('posStop');
         const closePosBtn = document.getElementById('closePosBtn');
         const demoBalanceSpan = document.getElementById('demoBalance');
+        const longLevelDisplay = document.getElementById('longLevelDisplay');
+        const shortLevelDisplay = document.getElementById('shortLevelDisplay');
+        const volStatus = document.getElementById('volStatus');
+        const modeDisplay = document.getElementById('modeDisplay');
 
         // ===== API Bybit =====
         const PRICE_API = 'https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT';
@@ -154,24 +247,7 @@
             demoBalanceSpan.textContent = demoBalance.toFixed(2);
         }
 
-        // ===== ГРАФИК TRADINGVIEW =====
-        new TradingView.widget({
-            "autosize": true,
-            "symbol": "BINANCE:BTCUSDT",
-            "interval": "60",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "ru",
-            "toolbar_bg": "#1a1a1a",
-            "enable_publishing": false,
-            "hide_side_toolbar": false,
-            "allow_symbol_change": true,
-            "studies": ["MASimple@tv-basicstudies"],
-            "container_id": "tv_chart_container"
-        });
-
-        // ===== ЗАГРУЗКА ОБЪЁМОВ (раз в минуту) =====
+        // ===== ЗАГРУЗКА ОБЪЁМОВ =====
         async function loadVolumeData() {
             try {
                 const response = await fetch(KLINE_API);
@@ -183,39 +259,46 @@
                     avgVolume = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1);
                 }
                 lastCandleVolume = volumes[volumes.length - 1] || 0;
+                updateVolumeStatus();
             } catch (e) {
-                console.error('Ошибка загрузки объёмов', e);
+                console.error('Ошибка объёмов', e);
             }
         }
         loadVolumeData();
         setInterval(loadVolumeData, 60000);
 
-        // ===== ЗВУК =====
-        const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+        function updateVolumeStatus() {
+            const volHigh = lastCandleVolume >= avgVolume * 1.5;
+            volStatus.textContent = volHigh ? 'Высокий' : 'Низкий';
+            volStatus.style.color = volHigh ? '#00ff00' : '#ff0000';
+        }
 
+        function updateModeDisplay() {
+            modeDisplay.textContent = highVolCheck.checked ? 'КОНТРТРЕНД' : 'ВСЕ ПРОБОИ';
+            modeDisplay.style.color = highVolCheck.checked ? '#ffaa00' : '#00aaff';
+        }
+
+        // ===== ЗВУК =====
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playAlarmSound() {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.frequency.setValueAtTime(900, now);
             osc.frequency.linearRampToValueAtTime(1100, now + 0.5);
             osc.type = 'sawtooth';
             gain.gain.setValueAtTime(0.8, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
-            osc.start(now);
-            osc.stop(now + 1);
+            osc.start(now); osc.stop(now + 1);
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
-            osc2.connect(gain2);
-            gain2.connect(audioCtx.destination);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
             osc2.frequency.setValueAtTime(400, now);
             osc2.type = 'square';
             gain2.gain.setValueAtTime(0.4, now);
             gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc2.start(now);
-            osc2.stop(now + 0.3);
+            osc2.start(now); osc2.stop(now + 0.3);
         }
 
         // ===== ДЕМО-ПОЗИЦИЯ =====
@@ -247,7 +330,7 @@
                 : (price - virtualPos.entryPrice) / virtualPos.entryPrice * POSITION_SIZE;
             if (loss >= STOP_LOSS_DOLLARS) {
                 closeVirtualPosition(price);
-                statusText.textContent = 'АВТОСТОП! Сработал стоп-лосс -50$';
+                statusText.textContent = 'АВТОСТОП! -50$';
             }
         }
 
@@ -277,16 +360,13 @@
             positionPanel.classList.remove('active');
         }
 
-        // ===== СИГНАЛ ТРЕВОГИ =====
+        // ===== СИГНАЛ =====
         function alarm(price, type, isCounterTrend = false) {
             alarmIndicator.style.display = 'block';
-            if (isCounterTrend) {
-                alarmIndicator.textContent = `КОНТРТРЕНД! Пробой ${type} на ${price.toFixed(2)}!`;
-                statusText.textContent = `КОНТРТРЕНД по объёму! Пробой ${type} на ${price.toFixed(2)}!`;
-            } else {
-                alarmIndicator.textContent = `ПРОБОЙ ${type} НА ${price.toFixed(2)}!`;
-                statusText.textContent = `СИРЕНА! Пробой ${type} на уровне ${price.toFixed(2)}!`;
-            }
+            alarmIndicator.textContent = isCounterTrend
+                ? `КОНТРТРЕНД! ${type} на ${price.toFixed(2)}`
+                : `ПРОБОЙ ${type} на ${price.toFixed(2)}`;
+            statusText.textContent = alarmIndicator.textContent;
             statusText.style.color = type === 'LONG' ? '#00ff00' : '#ff0000';
             playAlarmSound();
             if (window.alarmInterval) clearInterval(window.alarmInterval);
@@ -297,14 +377,13 @@
 
         function stopAlarm() {
             alarmIndicator.style.display = 'none';
-            if (window.alarmInterval) { clearInterval(window.alarmInterval);
-                window.alarmInterval = null; }
+            if (window.alarmInterval) { clearInterval(window.alarmInterval); window.alarmInterval = null; }
             statusText.textContent = 'Мониторинг остановлен.';
             statusText.style.color = '#888';
             isMonitoring = false;
             startBtn.disabled = false;
             stopBtn.disabled = true;
-            if (virtualPos) closeVirtualPosition(parseFloat(priceDisplay.textContent.replace('$ ', '')));
+            if (virtualPos) closeVirtualPosition(parseFloat(bigPrice.textContent.replace('$ ', '')));
         }
 
         // ===== МОНИТОРИНГ =====
@@ -314,16 +393,21 @@
                 if (!response.ok) throw new Error('Нет ответа');
                 const json = await response.json();
                 const price = parseFloat(json.result.list[0].lastPrice);
-                priceDisplay.textContent = `$ ${price.toFixed(2)}`;
+                bigPrice.textContent = `$ ${price.toFixed(2)}`;
                 startBtn.disabled = false;
                 testAlarmBtn.disabled = false;
                 testBreakoutBtn.disabled = false;
+                updateVolumeStatus();
+                updateModeDisplay();
                 updatePositionPanel(price);
 
                 if (isMonitoring) {
                     const longLevel = parseFloat(longLevelInput.value);
                     const shortLevel = parseFloat(shortLevelInput.value);
                     if (!longLevel || !shortLevel) return;
+
+                    longLevelDisplay.textContent = longLevel;
+                    shortLevelDisplay.textContent = shortLevel;
 
                     const useHighVol = highVolCheck.checked;
                     const volHigh = lastCandleVolume >= avgVolume * 1.5;
@@ -334,36 +418,26 @@
                     if (useHighVol) {
                         if (price < longLevel && volHigh) {
                             alarm(price, 'SHORT', true);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                         if (price > shortLevel && volHigh) {
                             alarm(price, 'LONG', true);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                     } else {
                         if (longTouchedBelow && price > longLevel) {
                             alarm(price, 'LONG', false);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                         if (shortTouchedAbove && price < shortLevel) {
                             alarm(price, 'SHORT', false);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                     }
                 }
             } catch (e) {
-                priceDisplay.textContent = 'ОШИБКА';
-                startBtn.disabled = true;
-                testAlarmBtn.disabled = true;
-                testBreakoutBtn.disabled = true;
+                bigPrice.textContent = 'ОШИБКА';
+                startBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
             }
         }
         setInterval(fetchPrice, 3000);
@@ -373,17 +447,13 @@
         startBtn.addEventListener('click', () => {
             const longLevel = parseFloat(longLevelInput.value);
             const shortLevel = parseFloat(shortLevelInput.value);
-            if (!longLevel || !shortLevel) {
-                alert('Введи оба уровня!');
-                return;
-            }
-            longTouchedBelow = false;
-            shortTouchedAbove = false;
+            if (!longLevel || !shortLevel) { alert('Введи оба уровня!'); return; }
+            longTouchedBelow = false; shortTouchedAbove = false;
             isMonitoring = true;
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            const mode = highVolCheck.checked ? 'КОНТРТРЕНД (High Vol)' : 'ЛОЖНЫЕ ПРОБОИ';
-            statusText.textContent = `Охрана LONG ${longLevel} / SHORT ${shortLevel}. Режим: ${mode}`;
+            startBtn.disabled = true; stopBtn.disabled = false;
+            longLevelDisplay.textContent = longLevel;
+            shortLevelDisplay.textContent = shortLevel;
+            statusText.textContent = `Охрана LONG ${longLevel} / SHORT ${shortLevel}`;
             statusText.style.color = '#ffff00';
         });
         stopBtn.addEventListener('click', stopAlarm);
@@ -394,19 +464,15 @@
         testBreakoutBtn.addEventListener('click', () => {
             alarmIndicator.style.display = 'block';
             alarmIndicator.textContent = 'ТЕСТ ПРОБОЯ!';
-            statusText.textContent = 'ТЕСТ ПРОБОЯ!';
-            statusText.style.color = '#ff5500';
-            playAlarmSound();
+            statusText.textContent = 'ТЕСТ ПРОБОЯ!'; statusText.style.color = '#ff5500'; playAlarmSound();
             setTimeout(() => {
                 alarmIndicator.style.display = 'none';
                 if (window.alarmInterval) { clearInterval(window.alarmInterval); }
-                statusText.textContent = 'Готов.';
-                statusText.style.color = '#888';
-                stopBtn.disabled = true;
+                statusText.textContent = 'Готов.'; statusText.style.color = '#888'; stopBtn.disabled = true;
             }, 3000);
         });
         closePosBtn.addEventListener('click', () => {
-            const priceText = priceDisplay.textContent.replace('$ ', '');
+            const priceText = bigPrice.textContent.replace('$ ', '');
             const price = parseFloat(priceText);
             if (!isNaN(price)) closeVirtualPosition(price);
         });
