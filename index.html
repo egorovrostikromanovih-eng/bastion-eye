@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bastion Eye - Мониторинг</title>
+    <title>Bastion Eye v2.0 - Ложный пробой</title>
     <style>
         body {
             background: #0a0a0a;
@@ -21,18 +21,31 @@
             padding: 2rem;
             border-radius: 1rem;
             text-align: center;
-            box-shadow: 0 0 20px rgba(0,255,0,0.1);
+            box-shadow: 0 0 20px rgba(255,0,0,0.1);
+            max-width: 90%;
         }
         #price {
             font-size: 3rem;
             font-weight: bold;
             color: #00ff00;
             text-shadow: 0 0 10px #00ff00;
+            margin: 1rem 0;
         }
         .status {
             margin-top: 1rem;
             font-size: 0.8rem;
             color: #888;
+        }
+        input {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: 0.5rem;
+            width: 80%;
+            margin: 0.5rem 0;
         }
         button {
             background: #222;
@@ -41,47 +54,131 @@
             padding: 0.8rem 2rem;
             font-size: 1rem;
             cursor: pointer;
-            margin-top: 1rem;
+            margin: 0.5rem;
             border-radius: 0.5rem;
             transition: 0.2s;
         }
         button:hover {
             background: #333;
-            border-color: #00ff00;
-            color: #00ff00;
+            border-color: #ff0000;
+            color: #ff0000;
         }
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+        #alarmIndicator {
+            display: none;
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            animation: blink 0.5s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>BASTION EYE</h1>
+        <h1>BASTION EYE v2.0</h1>
         <div id="price">ЗАГРУЗКА...</div>
-        <div class="status" id="status">Подключение...</div>
-        <button id="startBtn" disabled>ЗАПУСТИТЬ МОНИТОРИНГ</button>
+        <div class="status" id="status">Жду команды...</div>
+        
+        <input type="number" id="levelInput" placeholder="Введи уровень (напр. 66500)">
+        
+        <button id="startBtn" disabled>ВЗЯТЬ ПОД ОХРАНУ</button>
+        <button id="stopBtn" disabled>СТОП</button>
+        
+        <div id="alarmIndicator">ЛОЖНЫЙ ПРОБОЙ! ЦЕНА УШЛА ПОД УРОВЕНЬ!</div>
     </div>
 
     <script>
         const priceElement = document.getElementById('price');
         const statusElement = document.getElementById('status');
         const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const levelInput = document.getElementById('levelInput');
+        const alarmIndicator = document.getElementById('alarmIndicator');
 
-        // Публичный API Binance. Без ключей. Символ BTCUSDT.
         const API_URL = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
+        
+        let targetLevel = 0;
+        let isMonitoring = false;
+        let priceWasAboveLevel = false; // Флаг: цена была над уровнем?
+
+        // Аудио для сирены (генерируем синтетический звук, не требующий файлов)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playAlarmSound() {
+            // Создаём осциллятор (пищалку)
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 1);
+        }
+
+        function alarm() {
+            alarmIndicator.style.display = 'block';
+            statusElement.textContent = 'СИРЕНА! Ложный пробой!';
+            statusElement.style.color = '#ff0000';
+            playAlarmSound();
+            // Повторяем звук каждые 2 секунды, пока не остановят
+            window.alarmInterval = setInterval(playAlarmSound, 2000);
+        }
+
+        function stopAlarm() {
+            alarmIndicator.style.display = 'none';
+            if (window.alarmInterval) {
+                clearInterval(window.alarmInterval);
+            }
+            statusElement.textContent = 'Мониторинг остановлен.';
+            statusElement.style.color = '#888';
+            isMonitoring = false;
+            priceWasAboveLevel = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
 
         async function fetchPrice() {
             try {
                 const response = await fetch(API_URL);
                 const data = await response.json();
-                const price = parseFloat(data.price).toFixed(2);
-                priceElement.textContent = `$ ${price}`;
+                const price = parseFloat(data.price);
+                priceElement.textContent = `$ ${price.toFixed(2)}`;
                 statusElement.textContent = 'Канал связи: АКТИВЕН';
                 statusElement.style.color = '#00ff00';
-                startBtn.disabled = false; // Активируем кнопку, если API отвечает
-                startBtn.textContent = 'ЗАПУСТИТЬ МОНИТОРИНГ';
+                startBtn.disabled = false;
+
+                // --- ЛОГИКА МОНИТОРИНГА ---
+                if (isMonitoring && targetLevel > 0) {
+                    // 1. Фиксируем, что цена была НАД уровнем
+                    if (price > targetLevel) {
+                        priceWasAboveLevel = true;
+                        statusElement.textContent = `Охраняю уровень ${targetLevel}. Цена над ним. Жду возврата...`;
+                        statusElement.style.color = '#ffff00';
+                    }
+                    // 2. Если цена была над уровнем, а сейчас стала ПОД ним
+                    if (priceWasAboveLevel && price < targetLevel) {
+                        statusElement.textContent = `ПРОБОЙ! Цена ушла под ${targetLevel}!`;
+                        statusElement.style.color = '#ff0000';
+                        alarm(); // Включаем сирену
+                        // Сбрасываем флаг, чтобы не орать каждый тик
+                        isMonitoring = false;
+                        startBtn.disabled = false;
+                        stopBtn.disabled = true;
+                    }
+                }
+
             } catch (error) {
                 priceElement.textContent = '---.--';
                 statusElement.textContent = 'Канал связи: ОШИБКА';
@@ -90,14 +187,26 @@
             }
         }
 
-        // Запрашиваем цену каждую секунду
         setInterval(fetchPrice, 1000);
-        fetchPrice(); // Первый запрос сразу
+        fetchPrice();
 
         startBtn.addEventListener('click', () => {
-            // Здесь будет логика ложного пробоя
-            statusElement.textContent = 'Модуль логики ещё не загружен. Жди следующей команды, Архитектор.';
+            const level = parseFloat(levelInput.value);
+            if (!level || level <= 0) {
+                alert('Введи корректный уровень цены!');
+                return;
+            }
+            targetLevel = level;
+            isMonitoring = true;
+            priceWasAboveLevel = false; // Сбрасываем перед стартом
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusElement.textContent = `Охраняю уровень ${targetLevel}. Жду, когда цена будет выше и упадёт...`;
+            statusElement.style.color = '#ffff00';
+            stopAlarm(); // Выключаем предыдущую сирену если была
         });
+
+        stopBtn.addEventListener('click', stopAlarm);
     </script>
 </body>
 </html>
