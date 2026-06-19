@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v10.0 — Bybit + Демо Баланс</title>
+    <title>Bastion Eye v10.3 — Стабильный Демо (Без Не спать)</title>
     <style>
         body {
             background: #0a0a0a; margin: 0; padding: 0;
@@ -141,13 +141,12 @@
 
         // ===== ДЕМО-БАЛАНС И ПОЗИЦИЯ =====
         let demoBalance = 1000.00;
-        const RISK_AMOUNT = 100; // на сделку
+        const RISK_AMOUNT = 100;
         const LEVERAGE = 10;
-        const STOP_LOSS_DOLLARS = 50; // -50$ = автостоп
-        // Размер позиции = риск * плечо = 100 * 10 = 1000$
+        const STOP_LOSS_DOLLARS = 50;
         const POSITION_SIZE = RISK_AMOUNT * LEVERAGE;
 
-        let virtualPos = null; // { type: 'LONG'|'SHORT', entryPrice: number, stopPrice: number }
+        let virtualPos = null;
 
         function updateBalanceUI() {
             demoBalanceSpan.textContent = demoBalance.toFixed(2);
@@ -242,7 +241,6 @@
             posPnL.textContent = pnl.toFixed(2);
             posPnL.style.color = pnl >= 0 ? '#00ff00' : '#ff0000';
 
-            // Проверка автостопа
             const loss = (virtualPos.type === 'LONG')
                 ? (virtualPos.entryPrice - price) / virtualPos.entryPrice * POSITION_SIZE
                 : (price - virtualPos.entryPrice) / virtualPos.entryPrice * POSITION_SIZE;
@@ -253,8 +251,7 @@
         }
 
         function openVirtualPosition(type, entryPrice) {
-            // Рассчитываем цену стопа
-            const stopDistance = STOP_LOSS_DOLLARS / POSITION_SIZE; // 50 / 1000 = 0.05 (5%)
+            const stopDistance = STOP_LOSS_DOLLARS / POSITION_SIZE;
             const stopPrice = (type === 'LONG')
                 ? entryPrice * (1 - stopDistance)
                 : entryPrice * (1 + stopDistance);
@@ -268,7 +265,7 @@
             const pnlPercent = (virtualPos.type === 'LONG')
                 ? ((currentPrice - virtualPos.entryPrice) / virtualPos.entryPrice * 100)
                 : ((virtualPos.entryPrice - currentPrice) / virtualPos.entryPrice * 100);
-            const pnlDollars = pnlPercent / 100 * POSITION_SIZE; // P/L в долларах
+            const pnlDollars = pnlPercent / 100 * POSITION_SIZE;
 
             demoBalance += pnlDollars;
             if (demoBalance < 0) demoBalance = 0;
