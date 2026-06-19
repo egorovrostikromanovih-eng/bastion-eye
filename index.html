@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v3.1 — Интерактивный Захват</title>
+    <title>Bastion Eye v3.2 — Стабильный ручной ввод</title>
     <style>
         body {
             background: #0a0a0a;
@@ -63,7 +63,6 @@
         }
         
         #startBtn { border-color: #00ff00; color: #00ff00; }
-        #captureBtn { border-color: #00aaff; color: #00aaff; }
         #stopBtn { border-color: #ffff00; color: #ffff00; }
         #testAlarmBtn { border-color: #ff0000; color: #ff0000; }
         #testBreakoutBtn { border-color: #ff5500; color: #ff5500; }
@@ -123,7 +122,6 @@
     <div class="cockpit">
         <label for="levelInput">УРОВЕНЬ:</label>
         <input type="number" id="levelInput" placeholder="66500">
-        <button id="captureBtn" disabled>ЗАХВАТИТЬ С ГРАФИКА</button>
         <button id="startBtn" disabled>ВЗЯТЬ ПОД ОХРАНУ</button>
         <button id="stopBtn" disabled>СТОП</button>
         <button id="testAlarmBtn" disabled>ТЕСТ ЗВУКА</button>
@@ -148,10 +146,8 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     
     <script>
-        // ========== ЭЛЕМЕНТЫ ==========
         const priceDisplay = document.getElementById('priceDisplay');
         const statusText = document.getElementById('statusText');
-        const captureBtn = document.getElementById('captureBtn');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const testAlarmBtn = document.getElementById('testAlarmBtn');
@@ -163,9 +159,7 @@
         let targetLevel = 0;
         let isMonitoring = false;
         let priceWasAboveLevel = false;
-        let tvWidget = null; // Ссылка на виджет
 
-        // ========== ЗВУК ==========
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playAlarmSound() {
             const now = audioCtx.currentTime;
@@ -215,19 +209,19 @@
                 const data = await response.json();
                 const price = parseFloat(data.price);
                 priceDisplay.textContent = `$ ${price.toFixed(2)}`;
-                startBtn.disabled = false; captureBtn.disabled = false;
-                testAlarmBtn.disabled = false; testBreakoutBtn.disabled = false;
+                startBtn.disabled = false;
+                testAlarmBtn.disabled = false;
+                testBreakoutBtn.disabled = false;
                 if (isMonitoring && targetLevel > 0) {
-                    if (price > targetLevel) { priceWasAboveLevel = true; statusText.textContent = `Уровень ${targetLevel}. Жду возврата...`; statusText.style.color = '#ffff00'; }
+                    if (price > targetLevel) { priceWasAboveLevel = true; statusText.textContent = `Уровень ${targetLevel}. Цена над ним. Жду возврата...`; statusText.style.color = '#ffff00'; }
                     if (priceWasAboveLevel && price < targetLevel) { statusText.textContent = `ПРОБОЙ!`; statusText.style.color = '#ff0000'; alarm(); isMonitoring = false; startBtn.disabled = false; }
                 }
             } catch (e) {
-                priceDisplay.textContent = 'ОШИБКА'; startBtn.disabled = true; captureBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
+                priceDisplay.textContent = 'ОШИБКА'; startBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
             }
         }
         setInterval(fetchPrice, 1000); fetchPrice();
 
-        // ========== КНОПКИ ==========
         startBtn.addEventListener('click', () => {
             const level = parseFloat(levelInput.value);
             if (!level || level <= 0) { alert('Введи уровень!'); return; }
@@ -243,30 +237,7 @@
             setTimeout(() => { alarmIndicator.style.display = 'none'; if (window.alarmInterval) { clearInterval(window.alarmInterval); } statusText.textContent = 'Готов.'; statusText.style.color = '#888'; stopBtn.disabled = true; }, 3000);
         });
 
-        // ========== ИНТЕРАКТИВНЫЙ ЗАХВАТ ==========
-        captureBtn.addEventListener('click', () => {
-            if (!tvWidget) { alert('График ещё не загрузился. Подожди пару секунд.'); return; }
-            // Запрашиваем у виджета все нарисованные линии
-            tvWidget.getLines((lines) => {
-                if (!lines || lines.length === 0) {
-                    alert('Ты ещё не нарисовал ни одной горизонтальной линии на графике!');
-                    return;
-                }
-                // Берём последнюю нарисованную линию
-                const lastLine = lines[lines.length - 1];
-                const price = lastLine.price;
-                if (price) {
-                    levelInput.value = price.toFixed(2);
-                    statusText.textContent = `Захвачен уровень ${price.toFixed(2)}`;
-                    statusText.style.color = '#00aaff';
-                } else {
-                    alert('Не удалось считать цену с линии. Нарисуй её заново.');
-                }
-            });
-        });
-
-        // ========== ГРАФИК ==========
-        tvWidget = new TradingView.widget({
+        new TradingView.widget({
             "autosize": true,
             "symbol": "BINANCE:BTCUSDT",
             "interval": "60",
