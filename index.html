@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bastion Eye v2.1 - Тест Сирены</title>
+    <title>Bastion Eye v2.2 - Тест Пробоя</title>
     <style>
         body {
             background: #0a0a0a;
@@ -93,6 +93,16 @@
             color: #ff0000;
             background: #333;
         }
+        #testBreakoutBtn {
+            border-color: #ff5500;
+            color: #ff5500;
+            font-weight: bold;
+        }
+        #testBreakoutBtn:hover {
+            border-color: #ff5500;
+            color: #ff5500;
+            background: #333;
+        }
         #alarmIndicator {
             display: none;
             color: #ff0000;
@@ -108,7 +118,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>BASTION EYE v2.1</h1>
+        <h1>BASTION EYE v2.2</h1>
         <div id="price">ЗАГРУЗКА...</div>
         <div class="status" id="status">Жду команды...</div>
         
@@ -117,6 +127,7 @@
         <button id="startBtn" disabled>ВЗЯТЬ ПОД ОХРАНУ</button>
         <button id="stopBtn" disabled>СТОП</button>
         <button id="testAlarmBtn" disabled>ТЕСТ СИРЕНЫ</button>
+        <button id="testBreakoutBtn" disabled>ТЕСТ ПРОБОЯ</button>
         
         <div id="alarmIndicator">ЛОЖНЫЙ ПРОБОЙ! ЦЕНА УШЛА ПОД УРОВЕНЬ!</div>
     </div>
@@ -127,6 +138,7 @@
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const testAlarmBtn = document.getElementById('testAlarmBtn');
+        const testBreakoutBtn = document.getElementById('testBreakoutBtn');
         const levelInput = document.getElementById('levelInput');
         const alarmIndicator = document.getElementById('alarmIndicator');
 
@@ -200,6 +212,7 @@
                 statusElement.style.color = '#00ff00';
                 startBtn.disabled = false;
                 testAlarmBtn.disabled = false;
+                testBreakoutBtn.disabled = false;
 
                 if (isMonitoring && targetLevel > 0) {
                     if (price > targetLevel) {
@@ -222,6 +235,7 @@
                 statusElement.style.color = '#ff0000';
                 startBtn.disabled = true;
                 testAlarmBtn.disabled = true;
+                testBreakoutBtn.disabled = true;
             }
         }
 
@@ -249,6 +263,25 @@
         testAlarmBtn.addEventListener('click', () => {
             alarm();
             statusElement.textContent = 'Ручной тест сирены!';
+        });
+
+        testBreakoutBtn.addEventListener('click', () => {
+            // Имитация ложного пробоя на 3 секунды
+            alarmIndicator.style.display = 'block';
+            statusElement.textContent = 'ТЕСТ ПРОБОЯ! Симулирую касание и возврат...';
+            statusElement.style.color = '#ff5500';
+            playAlarmSound();
+            
+            // Автоматически отключаем через 3 секунды
+            setTimeout(() => {
+                alarmIndicator.style.display = 'none';
+                if (window.alarmInterval) {
+                    clearInterval(window.alarmInterval);
+                    window.alarmInterval = null;
+                }
+                statusElement.textContent = 'Тест завершен. Система готова.';
+                statusElement.style.color = '#888';
+            }, 3000);
         });
     </script>
 </body>
