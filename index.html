@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bastion Eye v2.0 - Ложный пробой</title>
+    <title>Bastion Eye v2.1 - Тест Сирены</title>
     <style>
         body {
             background: #0a0a0a;
@@ -60,12 +60,38 @@
         }
         button:hover {
             background: #333;
-            border-color: #ff0000;
-            color: #ff0000;
         }
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        #startBtn {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        #startBtn:hover {
+            border-color: #00ff00;
+            color: #00ff00;
+            background: #333;
+        }
+        #stopBtn {
+            border-color: #ffff00;
+            color: #ffff00;
+        }
+        #stopBtn:hover {
+            border-color: #ffff00;
+            color: #ffff00;
+            background: #333;
+        }
+        #testAlarmBtn {
+            border-color: #ff0000;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        #testAlarmBtn:hover {
+            border-color: #ff0000;
+            color: #ff0000;
+            background: #333;
         }
         #alarmIndicator {
             display: none;
@@ -82,7 +108,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>BASTION EYE v2.0</h1>
+        <h1>BASTION EYE v2.1</h1>
         <div id="price">ЗАГРУЗКА...</div>
         <div class="status" id="status">Жду команды...</div>
         
@@ -90,6 +116,7 @@
         
         <button id="startBtn" disabled>ВЗЯТЬ ПОД ОХРАНУ</button>
         <button id="stopBtn" disabled>СТОП</button>
+        <button id="testAlarmBtn" disabled>ТЕСТ СИРЕНЫ</button>
         
         <div id="alarmIndicator">ЛОЖНЫЙ ПРОБОЙ! ЦЕНА УШЛА ПОД УРОВЕНЬ!</div>
     </div>
@@ -99,6 +126,7 @@
         const statusElement = document.getElementById('status');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const testAlarmBtn = document.getElementById('testAlarmBtn');
         const levelInput = document.getElementById('levelInput');
         const alarmIndicator = document.getElementById('alarmIndicator');
 
@@ -106,25 +134,37 @@
         
         let targetLevel = 0;
         let isMonitoring = false;
-        let priceWasAboveLevel = false; // Флаг: цена была над уровнем?
+        let priceWasAboveLevel = false;
 
-        // Аудио для сирены (генерируем синтетический звук, не требующий файлов)
+        // Улучшенный, более громкий и резкий звук сирены
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playAlarmSound() {
-            // Создаём осциллятор (пищалку)
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
             
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-            oscillator.type = 'square';
+            // Основной тон
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(900, now);
+            osc.frequency.linearRampToValueAtTime(1100, now + 0.5);
+            osc.type = 'sawtooth';
+            gain.gain.setValueAtTime(0.8, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
+            osc.start(now);
+            osc.stop(now + 1);
             
-            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-            
-            oscillator.start(audioCtx.currentTime);
-            oscillator.stop(audioCtx.currentTime + 1);
+            // Второй слой для громкости
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.frequency.setValueAtTime(400, now);
+            osc2.type = 'square';
+            gain2.gain.setValueAtTime(0.4, now);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc2.start(now);
+            osc2.stop(now + 0.3);
         }
 
         function alarm() {
@@ -132,7 +172,7 @@
             statusElement.textContent = 'СИРЕНА! Ложный пробой!';
             statusElement.style.color = '#ff0000';
             playAlarmSound();
-            // Повторяем звук каждые 2 секунды, пока не остановят
+            if (window.alarmInterval) clearInterval(window.alarmInterval);
             window.alarmInterval = setInterval(playAlarmSound, 2000);
         }
 
@@ -140,6 +180,7 @@
             alarmIndicator.style.display = 'none';
             if (window.alarmInterval) {
                 clearInterval(window.alarmInterval);
+                window.alarmInterval = null;
             }
             statusElement.textContent = 'Мониторинг остановлен.';
             statusElement.style.color = '#888';
@@ -158,32 +199,29 @@
                 statusElement.textContent = 'Канал связи: АКТИВЕН';
                 statusElement.style.color = '#00ff00';
                 startBtn.disabled = false;
+                testAlarmBtn.disabled = false;
 
-                // --- ЛОГИКА МОНИТОРИНГА ---
                 if (isMonitoring && targetLevel > 0) {
-                    // 1. Фиксируем, что цена была НАД уровнем
                     if (price > targetLevel) {
                         priceWasAboveLevel = true;
                         statusElement.textContent = `Охраняю уровень ${targetLevel}. Цена над ним. Жду возврата...`;
                         statusElement.style.color = '#ffff00';
                     }
-                    // 2. Если цена была над уровнем, а сейчас стала ПОД ним
                     if (priceWasAboveLevel && price < targetLevel) {
                         statusElement.textContent = `ПРОБОЙ! Цена ушла под ${targetLevel}!`;
                         statusElement.style.color = '#ff0000';
-                        alarm(); // Включаем сирену
-                        // Сбрасываем флаг, чтобы не орать каждый тик
+                        alarm();
                         isMonitoring = false;
                         startBtn.disabled = false;
                         stopBtn.disabled = true;
                     }
                 }
-
             } catch (error) {
                 priceElement.textContent = '---.--';
                 statusElement.textContent = 'Канал связи: ОШИБКА';
                 statusElement.style.color = '#ff0000';
                 startBtn.disabled = true;
+                testAlarmBtn.disabled = true;
             }
         }
 
@@ -198,15 +236,20 @@
             }
             targetLevel = level;
             isMonitoring = true;
-            priceWasAboveLevel = false; // Сбрасываем перед стартом
+            priceWasAboveLevel = false;
             startBtn.disabled = true;
             stopBtn.disabled = false;
             statusElement.textContent = `Охраняю уровень ${targetLevel}. Жду, когда цена будет выше и упадёт...`;
             statusElement.style.color = '#ffff00';
-            stopAlarm(); // Выключаем предыдущую сирену если была
+            stopAlarm();
         });
 
         stopBtn.addEventListener('click', stopAlarm);
+        
+        testAlarmBtn.addEventListener('click', () => {
+            alarm();
+            statusElement.textContent = 'Ручной тест сирены!';
+        });
     </script>
 </body>
 </html>
