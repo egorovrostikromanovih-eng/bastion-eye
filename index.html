@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v5.1 — Стабильный Захват</title>
+    <title>Bastion Eye v8.0 — Демо-Симуляция Сделок</title>
     <style>
         body {
             background: #0a0a0a;
@@ -27,7 +27,7 @@
             z-index: 10;
         }
         .cockpit label { color: #888; font-size: 0.8rem; margin-right: -0.5rem; }
-        .cockpit input {
+        .cockpit input[type="number"] {
             background: #1a1a1a; color: #00ff00; border: 1px solid #555;
             padding: 0.4rem; font-size: 0.9rem; text-align: center;
             border-radius: 0.4rem; width: 100px;
@@ -43,6 +43,14 @@
         #testAlarmBtn { border-color: #ff0000; color: #ff0000; }
         #testBreakoutBtn { border-color: #ff5500; color: #ff5500; }
         #clearLinesBtn { border-color: #aa00ff; color: #aa00ff; }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+        .filter-group input[type="checkbox"] { width: auto; margin: 0; }
 
         .chart-container {
             flex: 1; position: relative; overflow: hidden; border-bottom: 2px solid #333;
@@ -76,6 +84,27 @@
         #alarmIndicator { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; display: none; }
         @keyframes blink { 50% { opacity: 0; } }
         #statusText { color: #888; }
+
+        .position-panel {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            padding: 0.6rem 1rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .position-panel.active { display: flex; }
+        .position-badge {
+            font-weight: bold; font-size: 0.9rem; padding: 0.2rem 0.6rem; border-radius: 0.3rem;
+        }
+        .position-badge.long { background: #1a2a1a; color: #00ff00; border: 1px solid #00ff00; }
+        .position-badge.short { background: #2a1a1a; color: #ff0000; border: 1px solid #ff0000; }
+        #closePosBtn {
+            background: #aa0000; color: #fff; border: 1px solid #ff0000;
+            padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer; border-radius: 0.4rem; font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +116,9 @@
         <button id="testAlarmBtn" disabled>ТЕСТ ЗВУКА</button>
         <button id="testBreakoutBtn" disabled>ТЕСТ ПРОБОЯ</button>
         <button id="clearLinesBtn" disabled>ОЧИСТИТЬ ЛИНИИ</button>
+        <div class="filter-group">
+            <label title="Контртренд: сигнал при пробое уровня на высоком объёме"><input type="checkbox" id="highVolCheck"> High Vol = Контртренд</label>
+        </div>
     </div>
     
     <div class="levels-panel" id="levelsPanel">
@@ -96,6 +128,14 @@
 
     <div class="chart-container">
         <div id="tv_chart_container" style="height:100%; width:100%"></div>
+    </div>
+
+    <div class="position-panel" id="positionPanel">
+        <span id="posType" class="position-badge">LONG</span>
+        <span>Вход: <span id="posEntry">0.00</span></span>
+        <span>Текущая: <span id="posCurrent">0.00</span></span>
+        <span>P/L: <span id="posPnL">0.00</span>%</span>
+        <button id="closePosBtn">ЗАКРЫТЬ</button>
     </div>
 
     <div class="status-bar">
@@ -121,14 +161,25 @@
         const alarmIndicator = document.getElementById('alarmIndicator');
         const levelsPanel = document.getElementById('levelsPanel');
         const noLevelsMsg = document.getElementById('noLevelsMsg');
+        const highVolCheck = document.getElementById('highVolCheck');
+        const positionPanel = document.getElementById('positionPanel');
+        const posType = document.getElementById('posType');
+        const posEntry = document.getElementById('posEntry');
+        const posCurrent = document.getElementById('posCurrent');
+        const posPnL = document.getElementById('posPnL');
+        const closePosBtn = document.getElementById('closePosBtn');
 
-        // API для цены (1 запрос в 2 секунды)
-        const PRICE_API = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
-        // API для свечей (один раз при загрузке)
-        const KLINE_API = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=200';
+        // Bybit API
+        const PRICE_API = 'https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT';
+        const KLINE_API = 'https://api.bybit.com/v5/market/kline?category=spot&symbol=BTCUSDT&interval=60&limit=200';
         
         let isMonitoring = false;
         let levelStates = {};
+        let lastCandleVolume = 0;
+        let avgVolume = 0;
+
+        // Виртуальная позиция
+        let virtualPos = null; // { type: 'LONG'|'SHORT', entryPrice: number }
 
         // ===== LIGHTWEIGHT CHARTS =====
         const chart = LightweightCharts.createChart(document.getElementById('tv_chart_container'), {
@@ -236,22 +287,30 @@
         });
         clearLinesBtn.addEventListener('click', clearAllLines);
 
-        // Загрузка свечей с обработкой ошибок
+        // Загрузка свечей Bybit и расчёт среднего объёма
         async function loadCandleData() {
             try {
                 const response = await fetch(KLINE_API);
                 if (!response.ok) throw new Error('Ошибка сети');
-                const data = await response.json();
+                const json = await response.json();
+                const data = json.result.list.reverse();
                 const candleData = data.map(d => ({
-                    time: d[0] / 1000,
+                    time: parseInt(d[0]) / 1000,
                     open: parseFloat(d[1]), high: parseFloat(d[2]),
                     low: parseFloat(d[3]), close: parseFloat(d[4]),
+                    volume: parseFloat(d[5])
                 }));
+                if (candleData.length > 1) {
+                    const volumes = candleData.slice(0, -1).map(d => d.volume);
+                    avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+                }
+                const last = candleData[candleData.length - 1];
+                lastCandleVolume = last.volume;
                 candleSeries.setData(candleData);
-                statusText.textContent = 'График загружен';
+                statusText.textContent = 'График Bybit загружен';
             } catch (e) {
                 statusText.textContent = 'Ошибка загрузки свечей, пробую снова...';
-                setTimeout(loadCandleData, 5000); // повтор через 5 сек
+                setTimeout(loadCandleData, 5000);
             }
         }
         loadCandleData();
@@ -279,15 +338,62 @@
             osc2.start(now); osc2.stop(now + 0.3);
         }
 
-        function alarm(price, type) {
+        function updatePositionPanel(price) {
+            if (!virtualPos) {
+                positionPanel.classList.remove('active');
+                return;
+            }
+            positionPanel.classList.add('active');
+            posEntry.textContent = virtualPos.entryPrice.toFixed(2);
+            posCurrent.textContent = price.toFixed(2);
+            
+            let pnl = 0;
+            if (virtualPos.type === 'LONG') {
+                pnl = ((price - virtualPos.entryPrice) / virtualPos.entryPrice * 100);
+                posType.className = 'position-badge long';
+                posType.textContent = 'LONG';
+            } else {
+                pnl = ((virtualPos.entryPrice - price) / virtualPos.entryPrice * 100);
+                posType.className = 'position-badge short';
+                posType.textContent = 'SHORT';
+            }
+            posPnL.textContent = pnl.toFixed(2);
+            posPnL.style.color = pnl >= 0 ? '#00ff00' : '#ff0000';
+        }
+
+        function openVirtualPosition(type, entryPrice) {
+            virtualPos = { type, entryPrice };
+            updatePositionPanel(entryPrice);
+            statusText.textContent = `Виртуальная позиция ${type} открыта по ${entryPrice.toFixed(2)}`;
+        }
+
+        function closeVirtualPosition(currentPrice) {
+            if (!virtualPos) return;
+            const pnl = virtualPos.type === 'LONG' 
+                ? ((currentPrice - virtualPos.entryPrice) / virtualPos.entryPrice * 100)
+                : ((virtualPos.entryPrice - currentPrice) / virtualPos.entryPrice * 100);
+            statusText.textContent = `Позиция ${virtualPos.type} закрыта. P/L: ${pnl.toFixed(2)}%`;
+            virtualPos = null;
+            positionPanel.classList.remove('active');
+        }
+
+        function alarm(price, type, isCounterTrend = false) {
             alarmIndicator.style.display = 'block';
-            alarmIndicator.textContent = `ПРОБОЙ ${type} НА ${price.toFixed(2)}!`;
-            statusText.textContent = `СИРЕНА! Пробой ${type} на уровне ${price.toFixed(2)}!`;
+            if (isCounterTrend) {
+                alarmIndicator.textContent = `КОНТРТРЕНД! Пробой ${type} на ${price.toFixed(2)}!`;
+                statusText.textContent = `КОНТРТРЕНД по объёму! Пробой ${type} на ${price.toFixed(2)}!`;
+            } else {
+                alarmIndicator.textContent = `ПРОБОЙ ${type} НА ${price.toFixed(2)}!`;
+                statusText.textContent = `СИРЕНА! Пробой ${type} на уровне ${price.toFixed(2)}!`;
+            }
             statusText.style.color = type === 'LONG' ? '#00ff00' : '#ff0000';
             playAlarmSound();
             if (window.alarmInterval) clearInterval(window.alarmInterval);
             window.alarmInterval = setInterval(playAlarmSound, 2000);
             stopBtn.disabled = false;
+            
+            // Открываем виртуальную позицию
+            openVirtualPosition(type, price);
         }
 
         function stopAlarm() {
@@ -301,37 +407,61 @@
                 levelStates[key].touchedAbove = false;
             });
             startBtn.disabled = false; stopBtn.disabled = true;
+            closeVirtualPosition(0); // Закрываем позицию при остановке
         }
 
-        // ===== МОНИТОРИНГ ЦЕНЫ =====
+        // ===== МОНИТОРИНГ (High Vol = Контртренд) =====
         async function fetchPrice() {
             try {
                 const response = await fetch(PRICE_API);
                 if (!response.ok) throw new Error('Нет ответа');
-                const data = await response.json();
-                const price = parseFloat(data.price);
+                const json = await response.json();
+                const price = parseFloat(json.result.list[0].lastPrice);
                 priceDisplay.textContent = `$ ${price.toFixed(2)}`;
                 startBtn.disabled = false;
                 testAlarmBtn.disabled = false;
                 testBreakoutBtn.disabled = false;
 
+                // Обновляем панель позиции
+                updatePositionPanel(price);
+
                 if (isMonitoring) {
+                    const useHighVol = highVolCheck.checked;
+                    const volHigh = lastCandleVolume >= avgVolume * 1.5;
+
                     for (const entry of lineEntries) {
                         const state = levelStates[entry.price];
                         if (!state) continue;
                         const level = entry.price;
                         const type = entry.type;
+
                         if (price < level) state.touchedBelow = true;
                         if (price > level) state.touchedAbove = true;
-                        let triggered = false, triggerType = '';
-                        if (state.touchedBelow && price > level && (type === 'long' || type === 'any')) {
-                            triggered = true; triggerType = 'LONG';
+
+                        let triggered = false, triggerType = '', isCounter = false;
+
+                        if (useHighVol) {
+                            if (type === 'long' || type === 'any') {
+                                if (price < level && volHigh) {
+                                    triggered = true; triggerType = 'SHORT'; isCounter = true;
+                                }
+                            }
+                            if (type === 'short' || type === 'any') {
+                                if (price > level && volHigh) {
+                                    triggered = true; triggerType = 'LONG'; isCounter = true;
+                                }
+                            }
+                        } else {
+                            if (state.touchedBelow && price > level && (type === 'long' || type === 'any')) {
+                                triggered = true; triggerType = 'LONG';
+                            }
+                            if (state.touchedAbove && price < level && (type === 'short' || type === 'any')) {
+                                triggered = true; triggerType = 'SHORT';
+                            }
                         }
-                        if (state.touchedAbove && price < level && (type === 'short' || type === 'any')) {
-                            triggered = true; triggerType = 'SHORT';
-                        }
+
                         if (triggered) {
-                            alarm(level, triggerType);
+                            alarm(level, triggerType, isCounter);
                             isMonitoring = false;
                             startBtn.disabled = false;
                             break;
@@ -343,7 +473,7 @@
                 startBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
             }
         }
-        setInterval(fetchPrice, 2000); // теперь раз в 2 секунды, чтобы не нагружать API
+        setInterval(fetchPrice, 3000);
         fetchPrice();
 
         // ===== КНОПКИ =====
@@ -355,16 +485,17 @@
             });
             isMonitoring = true;
             startBtn.disabled = true; stopBtn.disabled = false;
-            statusText.textContent = `Охраняю ${lineEntries.length} уровней...`;
+            const mode = highVolCheck.checked ? 'КОНТРТРЕНД' : 'ВСЕ ПРОБОИ';
+            statusText.textContent = `Охраняю ${lineEntries.length} ур. Режим: ${mode}`;
             statusText.style.color = '#ffff00';
         });
         stopBtn.addEventListener('click', stopAlarm);
         testAlarmBtn.addEventListener('click', () => {
             if (lineEntries.length > 0) {
                 const first = lineEntries[0];
-                alarm(first.price, first.type.toUpperCase());
+                alarm(first.price, first.type.toUpperCase(), highVolCheck.checked);
             } else {
-                alarm(0, 'TEST');
+                alarm(0, 'TEST', highVolCheck.checked);
             }
             statusText.textContent = 'Тест сирены!';
         });
@@ -377,6 +508,11 @@
                 if (window.alarmInterval) { clearInterval(window.alarmInterval); }
                 statusText.textContent = 'Готов.'; statusText.style.color = '#888'; stopBtn.disabled = true;
             }, 3000);
+        });
+        closePosBtn.addEventListener('click', () => {
+            const priceText = priceDisplay.textContent.replace('$ ', '');
+            const price = parseFloat(priceText);
+            if (!isNaN(price)) closeVirtualPosition(price);
         });
     </script>
 </body>
