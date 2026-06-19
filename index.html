@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bastion Eye - Мониторинг</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,255,0,0.1);
+        }
+        #price {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .status {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        button {
+            background: #222;
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #333;
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BASTION EYE</h1>
+        <div id="price">ЗАГРУЗКА...</div>
+        <div class="status" id="status">Подключение...</div>
+        <button id="startBtn" disabled>ЗАПУСТИТЬ МОНИТОРИНГ</button>
+    </div>
+
+    <script>
+        const priceElement = document.getElementById('price');
+        const statusElement = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+
+        // Публичный API Binance. Без ключей. Символ BTCUSDT.
+        const API_URL = 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT';
+
+        async function fetchPrice() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                const price = parseFloat(data.price).toFixed(2);
+                priceElement.textContent = `$ ${price}`;
+                statusElement.textContent = 'Канал связи: АКТИВЕН';
+                statusElement.style.color = '#00ff00';
+                startBtn.disabled = false; // Активируем кнопку, если API отвечает
+                startBtn.textContent = 'ЗАПУСТИТЬ МОНИТОРИНГ';
+            } catch (error) {
+                priceElement.textContent = '---.--';
+                statusElement.textContent = 'Канал связи: ОШИБКА';
+                statusElement.style.color = '#ff0000';
+                startBtn.disabled = true;
+            }
+        }
+
+        // Запрашиваем цену каждую секунду
+        setInterval(fetchPrice, 1000);
+        fetchPrice(); // Первый запрос сразу
+
+        startBtn.addEventListener('click', () => {
+            // Здесь будет логика ложного пробоя
+            statusElement.textContent = 'Модуль логики ещё не загружен. Жди следующей команды, Архитектор.';
+        });
+    </script>
+</body>
+</html>
