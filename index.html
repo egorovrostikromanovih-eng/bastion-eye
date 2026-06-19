@@ -3,229 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Bastion Eye v11.0 — Sentinel Terminal</title>
+  <title>Bastion Eye v12.1 — Santiel Live</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background: #000;
-      font-family: 'Courier New', Courier, monospace;
-      color: #e0e0e0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Верхний ASCII-динозавр */
-    .ascii-header {
-      background: #000;
-      border-bottom: 1px solid #003366;
-      padding: 0.3rem 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-    .ascii-art {
-      font-size: 0.35rem;
-      line-height: 1.2;
-      color: #00ff00;
-      text-shadow: 0 0 5px #00ff00;
-      white-space: pre;
-      text-align: center;
-      animation: flicker 5s infinite alternate;
-    }
-    @keyframes flicker {
-      0% { opacity: 0.95; }
-      100% { opacity: 1; }
-    }
-    /* Панель управления */
-    .cockpit {
-      background: #000;
-      border-bottom: 1px solid #003366;
-      padding: 0.6rem 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      z-index: 10;
-    }
-    .cockpit label {
-      color: #888;
-      font-size: 0.7rem;
-      margin-right: -0.3rem;
-    }
-    .cockpit input[type="number"] {
-      background: #0a0a0a;
-      color: #00ff00;
-      border: 1px solid #003366;
-      padding: 0.3rem;
-      font-size: 0.8rem;
-      text-align: center;
-      border-radius: 0.3rem;
-      width: 70px;
-    }
-    .cockpit button {
-      background: #0a0a0a;
-      color: #ccc;
-      border: 1px solid #003366;
-      padding: 0.3rem 0.8rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      border-radius: 0.3rem;
-      transition: 0.2s;
-      white-space: nowrap;
-      font-weight: bold;
-    }
-    .cockpit button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; font-family: 'Courier New', Courier, monospace; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; }
+    .ascii-header { background: #000; border-bottom: 1px solid #003366; padding: 0.3rem 0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    .ascii-art { font-size: 0.35rem; line-height: 1.2; color: #00ff00; text-shadow: 0 0 5px #00ff00; white-space: pre; text-align: center; animation: flicker 5s infinite alternate; }
+    @keyframes flicker { 0% { opacity: 0.95; } 100% { opacity: 1; } }
+    .cockpit { background: #000; border-bottom: 1px solid #003366; padding: 0.6rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; z-index: 10; }
+    .cockpit label { color: #888; font-size: 0.7rem; margin-right: -0.3rem; }
+    .cockpit input[type="number"] { background: #0a0a0a; color: #00ff00; border: 1px solid #003366; padding: 0.3rem; font-size: 0.8rem; text-align: center; border-radius: 0.3rem; width: 70px; }
+    .cockpit button { background: #0a0a0a; color: #ccc; border: 1px solid #003366; padding: 0.3rem 0.8rem; font-size: 0.7rem; cursor: pointer; border-radius: 0.3rem; transition: 0.2s; white-space: nowrap; font-weight: bold; }
+    .cockpit button:disabled { opacity: 0.4; cursor: not-allowed; }
     #startBtn { border-color: #00ff00; color: #00ff00; }
     #stopBtn { border-color: #ffff00; color: #ffff00; }
     #testAlarmBtn { border-color: #ff0000; color: #ff0000; }
     #journalBtn { border-color: #00aaff; color: #00aaff; }
     #copyBtn { border-color: #ffaa00; color: #ffaa00; }
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      color: #aaa;
-    }
-    .filter-group input[type="checkbox"] { width: auto; margin: 0; }
-    /* Основной дэшборд */
-    .dashboard {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-    .price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    #bigPrice {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: #00ff00;
-      text-shadow: 0 0 10px #00ff00;
-    }
-    .level-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
-    }
-    .level-card {
-      background: #0a0a0a;
-      border: 1px solid #003366;
-      border-radius: 0.4rem;
-      padding: 0.4rem;
-      text-align: center;
-      font-size: 0.7rem;
-    }
+    .dashboard { flex: 1; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; overflow-y: auto; }
+    .price-row { display: flex; justify-content: space-between; align-items: center; }
+    #bigPrice { font-size: 2.5rem; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+    .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .level-card { background: #0a0a0a; border: 1px solid #003366; border-radius: 0.4rem; padding: 0.4rem; text-align: center; font-size: 0.7rem; }
     .level-card .label { color: #888; }
     .level-card .value { color: #00ff00; font-weight: bold; }
-    .indicators-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 0.5rem;
-    }
-    .indicator-card {
-      background: #0a0a0a;
-      border: 1px solid #003366;
-      border-radius: 0.4rem;
-      padding: 0.5rem;
-      text-align: center;
-    }
-    .indicator-title { font-size: 0.6rem; color: #888; text-transform: uppercase; }
-    .indicator-value { font-size: 1rem; font-weight: bold; color: #00ff00; }
-    .status-bar {
-      background: #000;
-      padding: 0.6rem 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.7rem;
-      border-top: 1px solid #003366;
-    }
-    #alarmIndicator {
-      color: #ff0000;
-      font-weight: bold;
-      animation: blink 0.5s infinite;
-      display: none;
-    }
+    .status-bar { background: #000; padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; border-top: 1px solid #003366; }
+    #alarmIndicator { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; display: none; }
     @keyframes blink { 50% { opacity: 0; } }
     #statusText { color: #888; }
-    /* Журнал сделок */
-    #journalPanel {
-      display: none;
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      background: #000;
-      border-top: 1px solid #003366;
-    }
-    #journalPanel.active { display: block; }
-    .journal-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.7rem;
-      color: #ccc;
-    }
-    .journal-table th {
-      text-align: left;
-      padding: 0.4rem;
-      border-bottom: 1px solid #003366;
-      color: #00ff00;
-    }
-    .journal-table td {
-      padding: 0.4rem;
-      border-bottom: 1px solid #001a1a;
-    }
-    .profit { color: #00ff00; }
-    .loss { color: #ff0000; }
-    /* Демо-панель и позиция */
-    .position-bar {
-      background: #0a0a0a;
-      border: 1px solid #003366;
-      border-radius: 0.4rem;
-      padding: 0.4rem 0.8rem;
-      display: none;
-      align-items: center;
-      gap: 1rem;
-      font-size: 0.7rem;
-    }
+    .position-bar { background: #0a0a0a; border: 1px solid #003366; border-radius: 0.4rem; padding: 0.4rem 0.8rem; display: none; align-items: center; gap: 1rem; font-size: 0.7rem; }
     .position-bar.active { display: flex; }
     .pos-badge { font-weight: bold; padding: 0.1rem 0.4rem; border-radius: 0.2rem; }
     .pos-badge.long { background: #1a2a1a; color: #00ff00; border: 1px solid #00ff00; }
     .pos-badge.short { background: #2a1a1a; color: #ff0000; border: 1px solid #ff0000; }
-    .balance-panel {
-      background: #0a0a0a;
-      border: 1px solid #003366;
-      border-radius: 0.4rem;
-      padding: 0.4rem 0.8rem;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.7rem;
-    }
-    #closePosBtn {
-      background: #aa0000;
-      color: #fff;
-      border: 1px solid #ff0000;
-      padding: 0.3rem 0.8rem;
-      cursor: pointer;
-      border-radius: 0.3rem;
-      font-weight: bold;
-    }
+    #closePosBtn { background: #aa0000; color: #fff; border: 1px solid #ff0000; padding: 0.3rem 0.8rem; cursor: pointer; border-radius: 0.3rem; font-weight: bold; }
+    #journalPanel { display: none; flex: 1; overflow-y: auto; padding: 1rem; background: #000; border-top: 1px solid #003366; }
+    #journalPanel.active { display: block; }
+    .journal-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; color: #ccc; }
+    .journal-table th { text-align: left; padding: 0.4rem; border-bottom: 1px solid #003366; color: #00ff00; }
+    .journal-table td { padding: 0.4rem; border-bottom: 1px solid #001a1a; }
+    .profit { color: #00ff00; } .loss { color: #ff0000; }
   </style>
 </head>
 <body>
-  <div class="ascii-header">
-    <pre class="ascii-art">
+  <div class="ascii-header"><pre class="ascii-art">DINOSAUR — BASTION SENTINEL</pre></div>
+  <div class="cockpit">
+    <label>LONG: <input type="number" id="longInput" placeholder="65000"></label>
+    <label>SHORT: <input type="number" id="shortInput" placeholder="68000"></label>
+    <button id="startBtn">ЗАПУСТИТЬ</button>
+    <button id="stopBtn" disabled>СТОП</button>
+    <button id="testAlarmBtn">ТЕСТ ЗВУКА</button>
+    <button id="journalBtn">ЖУРНАЛ</button>
+    <button id="copyBtn">СКОПИРОВАТЬ СВОДКУ</button>
+  </div>
+  <div class="dashboard">
+    <div class="price-row"><span id="bigPrice">--</span><span id="balanceDisplay">1000$</span></div>
+    <div class="level-grid">
+      <div class="level-card"><span class="label">LONG</span><br><span class="value" id="longLevelDisplay">--</span></div>
+      <div class="level-card"><span class="label">SHORT</span><br><span class="value" id="shortLevelDisplay">--</span></div>
+    </div>
+    <div class="position-bar" id="positionPanel">
+      <span id="posType" class="pos-badge">LONG</span>
+      <span>Вход: <span id="posEntry">--</span></span>
+      <span>Тек: <span id="posCurrent">--</span></span>
+      <span>Стоп: <span id="posStop">--</span></span>
+      <button id="closePosBtn">ЗАКРЫТЬ</button>
+    </div>
+    <div id="journalPanel"><table class="journal-table" id="journalTable"></table></div>
+  </div>
+  <div class="status-bar">
+    <span id="alarmIndicator"></span>
+    <span id="statusText">Подключение...</span>
+  </div>
+  <script>
+    const SERVER = 'ws://138.16.152.71:80';
+    let ws, journal = [];
+
+    document.getElementById('startBtn').onclick = () => {
+      ws.send(JSON.stringify({ long: document.getElementById('longInput').value, short: document.getElementById('shortInput').value }));
+    };
+    document.getElementById('stopBtn').onclick = () => { ws.send(JSON.stringify({ stop: true })); };
+    document.getElementById('testAlarmBtn').onclick = () => { playAlarm(); };
+    document.getElementById('journalBtn').onclick = () => {
+      const p = document.getElementById('journalPanel');
+      p.classList.toggle('active');
+      renderJournal();
+    };
+    document.getElementById('copyBtn').onclick = () => {
+      const price = document.getElementById('bigPrice').textContent;
+      const long = document.getElementById('longLevelDisplay').textContent;
+      const short = document.getElementById('shortLevelDisplay').textContent;
+      const bal = document.getElementById('balanceDisplay').textContent;
+      const text = `Цена: ${price} | Long: ${long} | Short: ${short} | Баланс: ${bal}`;
+      navigator.clipboard.writeText(text);
+      alert('Сводка скопирована');
+    };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playAlarm() {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = 800; o.type = 'square'; g.gain.value = 0.3;
+      o.start(); setTimeout(() => o.stop(), 200);
+    }
+
+    function renderJournal() {
+      const t = document.getElementById('journalTable');
+      t.innerHTML = '<tr><th>Тип</th><th>Вход</th><th>Выход</th><th>P/L</th></tr>';
+      journal.slice(-10).reverse().forEach(e => {
+        const cls = e.pnl >= 0 ? 'profit' : 'loss';
+        t.innerHTML += `<tr><td>${e.type}</td><td>${e.entry}</td><td>${e.exit}</td><td class="${cls}">${e.pnl.toFixed(2)}$</td></tr>`;
+      });
+    }
+
+    function connect() {
+      ws = new WebSocket(SERVER);
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data.type === 'price' || data.type === 'init') {
+          document.getElementById('bigPrice').textContent = '$' + data.price.toFixed(2);
+          document.getElementById('balanceDisplay').textContent = data.balance.toFixed(2) + '$';
+          if (data.levels) {
+            document.getElementById('longLevelDisplay').textContent = data.levels.long.price;
+            document.getElementById('shortLevelDisplay').textContent = data.levels.short.price;
+          }
+          if (data.pos) {
+            document.getElementById('positionPanel').classList.add('active');
+            document.getElementById('posType').textContent = data.pos.type;
+            document.getElementById('posEntry').textContent = data.pos.entry.toFixed(2);
+            document.getElementById('posStop').textContent = data.pos.stop.toFixed(2);
+          } else {
+            document.getElementById('positionPanel').classList.remove('active');
+          }
+          document.getElementById('statusText').textContent = 'Онлайн';
+        }
+        if (data.type === 'signal') {
+          document.getElementById('alarmIndicator').style.display = 'block';
+          document.getElementById('alarmIndicator').textContent = `СИГНАЛ ${data.signal} на ${data.level}`;
+          playAlarm();
+          setTimeout(() => document.getElementById('alarmIndicator').style.display = 'none', 3000);
+          journal.push({ type: data.signal, entry: data.level, exit: data.price, pnl: 0 });
+        }
+      };
+      ws.onclose = () => { document.getElementById('statusText').textContent = 'Переподключение...'; setTimeout(connect, 3000); };
+    }
+    connect();
+  </script>
+</body>
+</html>
