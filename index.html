@@ -3,163 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bastion Eye v9.0 — Long/Short + Контртренд по объёму</title>
+    <title>Bastion Eye v10.0 — Bybit + Демо Баланс</title>
     <style>
         body {
-            background: #0a0a0a;
-            margin: 0;
-            padding: 0;
+            background: #0a0a0a; margin: 0; padding: 0;
             font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            color: #e0e0e0;
+            display: flex; flex-direction: column; height: 100vh; color: #e0e0e0;
         }
         .cockpit {
-            background: #111;
-            border-bottom: 2px solid #333;
-            padding: 0.8rem 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 0.8rem;
-            z-index: 10;
+            background: #111; border-bottom: 2px solid #333; padding: 0.8rem 1rem;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+            gap: 0.8rem; z-index: 10;
         }
-        .cockpit label {
-            color: #888;
-            font-size: 0.8rem;
-            margin-right: -0.5rem;
-        }
+        .cockpit label { color: #888; font-size: 0.8rem; margin-right: -0.5rem; }
         .cockpit input[type="number"] {
-            background: #1a1a1a;
-            color: #00ff00;
-            border: 1px solid #555;
-            padding: 0.4rem;
-            font-size: 0.9rem;
-            text-align: center;
-            border-radius: 0.4rem;
-            width: 100px;
+            background: #1a1a1a; color: #00ff00; border: 1px solid #555;
+            padding: 0.4rem; font-size: 0.9rem; text-align: center; border-radius: 0.4rem; width: 100px;
         }
         .cockpit button {
-            background: #1a1a1a;
-            color: #ccc;
-            border: 1px solid #555;
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-            cursor: pointer;
-            border-radius: 0.4rem;
-            transition: 0.2s;
-            white-space: nowrap;
-            font-weight: bold;
+            background: #1a1a1a; color: #ccc; border: 1px solid #555;
+            padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer;
+            border-radius: 0.4rem; transition: 0.2s; white-space: nowrap; font-weight: bold;
         }
-        .cockpit button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        #startBtn {
-            border-color: #00ff00;
-            color: #00ff00;
-        }
-        #stopBtn {
-            border-color: #ffff00;
-            color: #ffff00;
-        }
-        #testAlarmBtn {
-            border-color: #ff0000;
-            color: #ff0000;
-        }
-        #testBreakoutBtn {
-            border-color: #ff5500;
-            color: #ff5500;
-        }
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.7rem;
-            color: #aaa;
-        }
-        .filter-group input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
+        .cockpit button:disabled { opacity: 0.4; cursor: not-allowed; }
+        #startBtn { border-color: #00ff00; color: #00ff00; }
+        #stopBtn { border-color: #ffff00; color: #ffff00; }
+        #testAlarmBtn { border-color: #ff0000; color: #ff0000; }
+        #testBreakoutBtn { border-color: #ff5500; color: #ff5500; }
+        .filter-group { display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: #aaa; }
+        .filter-group input[type="checkbox"] { width: auto; margin: 0; }
 
-        .chart-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 2px solid #333;
-        }
+        .chart-container { flex: 1; position: relative; overflow: hidden; border-bottom: 2px solid #333; }
         .status-bar {
-            background: #111;
-            padding: 0.8rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            border-top: 2px solid #333;
-            flex-wrap: wrap;
+            background: #111; padding: 0.8rem 1rem; display: flex; justify-content: space-between;
+            align-items: center; font-size: 0.8rem; border-top: 2px solid #333; flex-wrap: wrap;
         }
-        #priceDisplay {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #00ff00;
-            text-shadow: 0 0 10px #00ff00;
-        }
-        #alarmIndicator {
-            color: #ff0000;
-            font-weight: bold;
-            animation: blink 0.5s infinite;
-            display: none;
-        }
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
-        }
-        #statusText {
-            color: #888;
-        }
+        #priceDisplay { font-size: 1.5rem; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+        #alarmIndicator { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; display: none; }
+        @keyframes blink { 50% { opacity: 0; } }
+        #statusText { color: #888; }
 
         .position-panel {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            padding: 0.6rem 1rem;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
+            background: #1a1a1a; border: 2px solid #333; padding: 0.6rem 1rem;
+            display: none; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
         }
-        .position-panel.active {
-            display: flex;
-        }
+        .position-panel.active { display: flex; }
         .position-badge {
-            font-weight: bold;
-            font-size: 0.9rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 0.3rem;
+            font-weight: bold; font-size: 0.9rem; padding: 0.2rem 0.6rem; border-radius: 0.3rem;
         }
-        .position-badge.long {
-            background: #1a2a1a;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-        }
-        .position-badge.short {
-            background: #2a1a1a;
-            color: #ff0000;
-            border: 1px solid #ff0000;
-        }
+        .position-badge.long { background: #1a2a1a; color: #00ff00; border: 1px solid #00ff00; }
+        .position-badge.short { background: #2a1a1a; color: #ff0000; border: 1px solid #ff0000; }
         #closePosBtn {
-            background: #aa0000;
-            color: #fff;
-            border: 1px solid #ff0000;
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-            cursor: pointer;
-            border-radius: 0.4rem;
-            font-weight: bold;
+            background: #aa0000; color: #fff; border: 1px solid #ff0000;
+            padding: 0.4rem 1rem; font-size: 0.8rem; cursor: pointer; border-radius: 0.4rem; font-weight: bold;
+        }
+        .balance-panel {
+            background: #111; padding: 0.4rem 1rem;
+            display: flex; justify-content: space-between; font-size: 0.8rem;
         }
     </style>
 </head>
@@ -181,9 +81,12 @@
     </div>
 
     <div class="chart-container">
-        <div class="tradingview-widget-container" style="height:100%; width:100%">
-            <div id="tv_chart_container" style="height:100%; width:100%"></div>
-        </div>
+        <div id="tv_chart_container" style="height:100%; width:100%"></div>
+    </div>
+
+    <div class="balance-panel">
+        <span>Демо Баланс: <span id="demoBalance">1000.00</span> $</span>
+        <span>Риск: 100$ / 10x | Стоп: -50$</span>
     </div>
 
     <div class="position-panel" id="positionPanel">
@@ -191,6 +94,7 @@
         <span>Вход: <span id="posEntry">0.00</span></span>
         <span>Текущая: <span id="posCurrent">0.00</span></span>
         <span>P/L: <span id="posPnL">0.00</span>%</span>
+        <span>Стоп: <span id="posStop">0.00</span></span>
         <button id="closePosBtn">ЗАКРЫТЬ</button>
     </div>
 
@@ -203,7 +107,7 @@
         <div id="statusText">Инициализация...</div>
     </div>
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script>
         // ===== ЭЛЕМЕНТЫ =====
         const priceDisplay = document.getElementById('priceDisplay');
@@ -221,82 +125,97 @@
         const posEntry = document.getElementById('posEntry');
         const posCurrent = document.getElementById('posCurrent');
         const posPnL = document.getElementById('posPnL');
+        const posStop = document.getElementById('posStop');
         const closePosBtn = document.getElementById('closePosBtn');
+        const demoBalanceSpan = document.getElementById('demoBalance');
 
         // ===== API Bybit =====
         const PRICE_API = 'https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT';
         const KLINE_API = 'https://api.bybit.com/v5/market/kline?category=spot&symbol=BTCUSDT&interval=60&limit=200';
 
         let isMonitoring = false;
-        // Состояния касания для Long (снизу) и Short (сверху)
         let longTouchedBelow = false;
         let shortTouchedAbove = false;
         let lastCandleVolume = 0;
         let avgVolume = 0;
-        let virtualPos = null; // { type: 'LONG'|'SHORT', entryPrice: number }
 
-        // ===== ГРАФИК TRADINGVIEW =====
-        new TradingView.widget({
-            "autosize": true,
-            "symbol": "BINANCE:BTCUSDT",
-            "interval": "60",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "ru",
-            "toolbar_bg": "#1a1a1a",
-            "enable_publishing": false,
-            "hide_side_toolbar": false,
-            "allow_symbol_change": true,
-            "studies": ["MASimple@tv-basicstudies"],
-            "container_id": "tv_chart_container"
+        // ===== ДЕМО-БАЛАНС И ПОЗИЦИЯ =====
+        let demoBalance = 1000.00;
+        const RISK_AMOUNT = 100; // на сделку
+        const LEVERAGE = 10;
+        const STOP_LOSS_DOLLARS = 50; // -50$ = автостоп
+        // Размер позиции = риск * плечо = 100 * 10 = 1000$
+        const POSITION_SIZE = RISK_AMOUNT * LEVERAGE;
+
+        let virtualPos = null; // { type: 'LONG'|'SHORT', entryPrice: number, stopPrice: number }
+
+        function updateBalanceUI() {
+            demoBalanceSpan.textContent = demoBalance.toFixed(2);
+        }
+
+        // ===== LIGHTWEIGHT CHARTS (Bybit) =====
+        const chart = LightweightCharts.createChart(document.getElementById('tv_chart_container'), {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            layout: { backgroundColor: '#0a0a0a', textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
+            rightPriceScale: { borderColor: '#333' },
+            timeScale: { borderColor: '#333' },
+        });
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#00ff00', downColor: '#ff0000', borderDownColor: '#ff0000',
+            borderUpColor: '#00ff00', wickDownColor: '#ff0000', wickUpColor: '#00ff00',
         });
 
-        // ===== ЗАГРУЗКА ОБЪЁМОВ (раз в минуту) =====
-        async function loadVolumeData() {
+        // Загрузка свечей Bybit и расчёт среднего объёма
+        async function loadCandleData() {
             try {
                 const response = await fetch(KLINE_API);
-                if (!response.ok) throw new Error('Ошибка');
+                if (!response.ok) throw new Error('Ошибка сети');
                 const json = await response.json();
                 const data = json.result.list.reverse();
-                const volumes = data.map(d => parseFloat(d[5]));
-                if (volumes.length > 1) {
-                    avgVolume = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1);
+                const candleData = data.map(d => ({
+                    time: parseInt(d[0]) / 1000,
+                    open: parseFloat(d[1]), high: parseFloat(d[2]),
+                    low: parseFloat(d[3]), close: parseFloat(d[4]),
+                    volume: parseFloat(d[5])
+                }));
+                if (candleData.length > 1) {
+                    const volumes = candleData.slice(0, -1).map(d => d.volume);
+                    avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
                 }
-                lastCandleVolume = volumes[volumes.length - 1] || 0;
+                const last = candleData[candleData.length - 1];
+                lastCandleVolume = last.volume;
+                candleSeries.setData(candleData);
+                statusText.textContent = 'График Bybit загружен';
             } catch (e) {
-                console.error('Ошибка загрузки объёмов', e);
+                statusText.textContent = 'Ошибка загрузки свечей, пробую снова...';
+                setTimeout(loadCandleData, 5000);
             }
         }
-        loadVolumeData();
-        setInterval(loadVolumeData, 60000);
+        loadCandleData();
 
         // ===== ЗВУК =====
-        const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playAlarmSound() {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.frequency.setValueAtTime(900, now);
             osc.frequency.linearRampToValueAtTime(1100, now + 0.5);
             osc.type = 'sawtooth';
             gain.gain.setValueAtTime(0.8, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
-            osc.start(now);
-            osc.stop(now + 1);
+            osc.start(now); osc.stop(now + 1);
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
-            osc2.connect(gain2);
-            gain2.connect(audioCtx.destination);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
             osc2.frequency.setValueAtTime(400, now);
             osc2.type = 'square';
             gain2.gain.setValueAtTime(0.4, now);
             gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc2.start(now);
-            osc2.stop(now + 0.3);
+            osc2.start(now); osc2.stop(now + 0.3);
         }
 
         // ===== ДЕМО-ПОЗИЦИЯ =====
@@ -308,6 +227,8 @@
             positionPanel.classList.add('active');
             posEntry.textContent = virtualPos.entryPrice.toFixed(2);
             posCurrent.textContent = price.toFixed(2);
+            posStop.textContent = virtualPos.stopPrice.toFixed(2);
+
             let pnl = 0;
             if (virtualPos.type === 'LONG') {
                 pnl = ((price - virtualPos.entryPrice) / virtualPos.entryPrice * 100);
@@ -320,19 +241,40 @@
             }
             posPnL.textContent = pnl.toFixed(2);
             posPnL.style.color = pnl >= 0 ? '#00ff00' : '#ff0000';
+
+            // Проверка автостопа
+            const loss = (virtualPos.type === 'LONG')
+                ? (virtualPos.entryPrice - price) / virtualPos.entryPrice * POSITION_SIZE
+                : (price - virtualPos.entryPrice) / virtualPos.entryPrice * POSITION_SIZE;
+            if (loss >= STOP_LOSS_DOLLARS) {
+                closeVirtualPosition(price);
+                statusText.textContent = 'АВТОСТОП! Сработал стоп-лосс -50$';
+            }
         }
 
         function openVirtualPosition(type, entryPrice) {
-            virtualPos = { type, entryPrice };
+            // Рассчитываем цену стопа
+            const stopDistance = STOP_LOSS_DOLLARS / POSITION_SIZE; // 50 / 1000 = 0.05 (5%)
+            const stopPrice = (type === 'LONG')
+                ? entryPrice * (1 - stopDistance)
+                : entryPrice * (1 + stopDistance);
+
+            virtualPos = { type, entryPrice, stopPrice };
             updatePositionPanel(entryPrice);
         }
 
         function closeVirtualPosition(currentPrice) {
             if (!virtualPos) return;
-            const pnl = virtualPos.type === 'LONG' ?
-                ((currentPrice - virtualPos.entryPrice) / virtualPos.entryPrice * 100) :
-                ((virtualPos.entryPrice - currentPrice) / virtualPos.entryPrice * 100);
-            statusText.textContent = `Позиция ${virtualPos.type} закрыта. P/L: ${pnl.toFixed(2)}%`;
+            const pnlPercent = (virtualPos.type === 'LONG')
+                ? ((currentPrice - virtualPos.entryPrice) / virtualPos.entryPrice * 100)
+                : ((virtualPos.entryPrice - currentPrice) / virtualPos.entryPrice * 100);
+            const pnlDollars = pnlPercent / 100 * POSITION_SIZE; // P/L в долларах
+
+            demoBalance += pnlDollars;
+            if (demoBalance < 0) demoBalance = 0;
+            updateBalanceUI();
+
+            statusText.textContent = `Позиция ${virtualPos.type} закрыта. P/L: ${pnlDollars.toFixed(2)}$`;
             virtualPos = null;
             positionPanel.classList.remove('active');
         }
@@ -357,14 +299,12 @@
 
         function stopAlarm() {
             alarmIndicator.style.display = 'none';
-            if (window.alarmInterval) { clearInterval(window.alarmInterval);
-                window.alarmInterval = null; }
+            if (window.alarmInterval) { clearInterval(window.alarmInterval); window.alarmInterval = null; }
             statusText.textContent = 'Мониторинг остановлен.';
             statusText.style.color = '#888';
             isMonitoring = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            closeVirtualPosition(0);
+            startBtn.disabled = false; stopBtn.disabled = true;
+            if (virtualPos) closeVirtualPosition(parseFloat(priceDisplay.textContent.replace('$ ', '')));
         }
 
         // ===== МОНИТОРИНГ =====
@@ -388,45 +328,32 @@
                     const useHighVol = highVolCheck.checked;
                     const volHigh = lastCandleVolume >= avgVolume * 1.5;
 
-                    // Отслеживаем касания для обычного режима
                     if (price < longLevel) longTouchedBelow = true;
                     if (price > shortLevel) shortTouchedAbove = true;
 
                     if (useHighVol) {
-                        // Режим контртренда (High Vol включён)
                         if (price < longLevel && volHigh) {
                             alarm(price, 'SHORT', true);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                         if (price > shortLevel && volHigh) {
                             alarm(price, 'LONG', true);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                     } else {
-                        // Режим ложных пробоев (High Vol выключен)
                         if (longTouchedBelow && price > longLevel) {
                             alarm(price, 'LONG', false);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                         if (shortTouchedAbove && price < shortLevel) {
                             alarm(price, 'SHORT', false);
-                            isMonitoring = false;
-                            startBtn.disabled = false;
-                            return;
+                            isMonitoring = false; startBtn.disabled = false; return;
                         }
                     }
                 }
             } catch (e) {
                 priceDisplay.textContent = 'ОШИБКА';
-                startBtn.disabled = true;
-                testAlarmBtn.disabled = true;
-                testBreakoutBtn.disabled = true;
+                startBtn.disabled = true; testAlarmBtn.disabled = true; testBreakoutBtn.disabled = true;
             }
         }
         setInterval(fetchPrice, 3000);
@@ -436,16 +363,10 @@
         startBtn.addEventListener('click', () => {
             const longLevel = parseFloat(longLevelInput.value);
             const shortLevel = parseFloat(shortLevelInput.value);
-            if (!longLevel || !shortLevel) {
-                alert('Введи оба уровня!');
-                return;
-            }
-            // Сбрасываем состояния касаний
-            longTouchedBelow = false;
-            shortTouchedAbove = false;
+            if (!longLevel || !shortLevel) { alert('Введи оба уровня!'); return; }
+            longTouchedBelow = false; shortTouchedAbove = false;
             isMonitoring = true;
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
+            startBtn.disabled = true; stopBtn.disabled = false;
             const mode = highVolCheck.checked ? 'КОНТРТРЕНД (High Vol)' : 'ЛОЖНЫЕ ПРОБОИ';
             statusText.textContent = `Охрана LONG ${longLevel} / SHORT ${shortLevel}. Режим: ${mode}`;
             statusText.style.color = '#ffff00';
@@ -458,15 +379,11 @@
         testBreakoutBtn.addEventListener('click', () => {
             alarmIndicator.style.display = 'block';
             alarmIndicator.textContent = 'ТЕСТ ПРОБОЯ!';
-            statusText.textContent = 'ТЕСТ ПРОБОЯ!';
-            statusText.style.color = '#ff5500';
-            playAlarmSound();
+            statusText.textContent = 'ТЕСТ ПРОБОЯ!'; statusText.style.color = '#ff5500'; playAlarmSound();
             setTimeout(() => {
                 alarmIndicator.style.display = 'none';
                 if (window.alarmInterval) { clearInterval(window.alarmInterval); }
-                statusText.textContent = 'Готов.';
-                statusText.style.color = '#888';
-                stopBtn.disabled = true;
+                statusText.textContent = 'Готов.'; statusText.style.color = '#888'; stopBtn.disabled = true;
             }, 3000);
         });
         closePosBtn.addEventListener('click', () => {
